@@ -9,23 +9,15 @@
 include    bios.inc
 include    kernel.inc
 
-           org     8000h
-           lbr     0ff00h
-           db      'free',0
-           dw      9000h
-           dw      endrom+7000h
-           dw      2000h
-           dw      endrom-2000h
-           dw      2000h
-           db      0
+d_idewrite: equ    044ah
+d_ideread:  equ    0447h
+
 
 buffer:    equ     2100h
 
            org     02000h
-           br      mainlp
-
-include    date.inc
-include    build.inc
+begin:     br      mainlp
+           eever
            db      'Written by Michael H. Riley',0
 
 mainlp:    ldi     high buffer         ; get address of prompt
@@ -39,7 +31,7 @@ mainlp:    ldi     high buffer         ; get address of prompt
            phi     r7
            plo     r7
            sep     scall               ; call bios to read sector
-           dw      f_ideread
+           dw      d_ideread
            ldi     high numaus         ; get message
            phi     rf
            ldi     low numaus
@@ -104,7 +96,7 @@ secloop:   ldi     high buffer         ; point to buffer
            ldi     low buffer
            plo     rf
            sep     scall               ; read the sector
-           dw      f_ideread
+           dw      d_ideread
            ldi     high buffer         ; point to buffer
            phi     rf
            ldi     low buffer
@@ -152,7 +144,7 @@ used:      dec     rb                  ; decrement entry count
            sep     scall               ; do a cr/lf
            dw      docrlf
 
-
+           ldi     0
            sep     sret                ; return to os
 
 docrlf:    ldi     high crlf
@@ -170,5 +162,8 @@ crlf:      db      10,13,0
 
 endrom:    equ     $
 
+.suppress
+
 cbuffer:   ds      40
 
+           end     begin
