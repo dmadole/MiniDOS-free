@@ -320,7 +320,7 @@ sizeout:    ghi   rd
 
             sep   scall
             dw    o_inmsg
-            db    'KB',13,10,0
+            db    ' KB',13,10,0
 
             sep   sret
 
@@ -356,7 +356,7 @@ sizembs:    glo   rb                    ; divide by 256 and round for mb
 
             sep   scall
             dw    o_inmsg
-            db    'MB',13,10,0
+            db    ' MB',13,10,0
 
             sep   sret
 
