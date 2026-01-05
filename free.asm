@@ -34,10 +34,10 @@ d_ideread:  equ   0447h
 
 start:      br    initial
 
-            db    11+80h                ; month
-            db    4                     ; date
-            dw    2024                  ; year
-            dw    1                     ; build
+            db    5+80h                 ; month
+            db    1                     ; date
+            dw    2026                  ; year
+            dw    2                     ; build
 
             db    'See github.com/dmadole/MiniDOS-free for info',0
 
