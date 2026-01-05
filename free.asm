@@ -129,9 +129,9 @@ havedir:    glo   rd                    ; pointer to drive of loaded sector
             ldi   0                     ; clear high byte for f_uintout
             phi   rd
 
-            ldi   disknum.1             ; pointer to disk number field
+            ldi   string.1              ; pointer to disk number field
             phi   rf
-            ldi   disknum.0
+            ldi   string.0
             plo   rf
 
             sep   scall                 ; convert disk number to decimal
@@ -140,9 +140,13 @@ havedir:    glo   rd                    ; pointer to drive of loaded sector
             ldi   0                     ; terminate the string
             str   rf
 
-            ldi   diskmsg.1             ; pointer to start of string
+            sep   scall                 ; convert disk number to decimal
+            dw    o_inmsg
+            db    'Disk: //',0
+
+            ldi   string.1              ; pointer to start of string
             phi   rf
-            ldi   diskmsg.0
+            ldi   string.0
             plo   rf
 
             sep   scall                 ; output the disk number message
@@ -236,71 +240,135 @@ nolabel:    sep   scall
             plo   ra
             plo   rd
 
-            glo   rd                    ; divide by 256 and round for mb
-            adi   128
-            ghi   rd
-            adci  0
 
-            plo   rb                    ; remember 9-bit result in rb
-            ldi   0
-            adci  0
+
+
+            sep   scall
+            dw    o_inmsg
+            db    'Size: ',0
+
+            sep   scall
+            dw    sizeout
+
+            lbr   getfree
+
+
+sizeout:    ghi   rd
             phi   rb
+            glo   rd
+            plo   rb
 
-            ldi   sizeaus.1             ; get field for size in aus
+            ldi   string.1              ; pointer to au space field
             phi   rf
-            ldi   sizeaus.0
+            ldi   string.0
             plo   rf
 
-            sep   scall                 ; convert to decimal
+            sep   scall                 ; convert au count to decimal
             dw    f_uintout
 
-            ldi   0                     ; zero terminare string
+            ldi   0                     ; zero terminate
             str   rf
 
-            ghi   rb                    ; the lsb is the size in megabytes
-            phi   rd
-            glo   rb
-            plo   rd
-
-            ldi   sizemsg.1             ; pointer au size part of message
+            ldi   string.1              ; get pointer to au space message
             phi   rf
-            ldi   sizemsg.0
+            ldi   string.0
             plo   rf
 
-            sep   scall                 ; output the au size message
+            sep   scall                 ; display au space message
             dw    o_msg
 
-            ldi   sizembs.1             ; pointer to megabytes size field
+            sep   scall
+            dw    o_inmsg
+            db    ' AU, ',0
+
+            ghi   rb
+            ani   %11000000
+            bnz   sizembs
+
+            glo   rb
+            shl
+            plo   rd
+            ghi   rb
+            shlc
+            phi   rd
+
+            glo   rd
+            shl
+            plo   rd
+            ghi   rd
+            shlc
+            phi   rd
+
+            ldi   string.1              ; pointer to au space field
             phi   rf
-            ldi   sizembs.0
+            ldi   string.0
             plo   rf
 
-            sep   scall                 ; convert megabytes size to decimal
+            sep   scall                 ; convert au count to decimal
+            dw    f_uintout
+
+            ldi   0                     ; zero terminate
+            str   rf
+
+            ldi   string.1              ; get pointer to au space message
+            phi   rf
+            ldi   string.0
+            plo   rf
+
+            sep   scall                 ; display au stace message
+            dw    o_msg
+
+            sep   scall
+            dw    o_inmsg
+            db    'KB',13,10,0
+
+            sep   sret
+
+
+sizembs:    glo   rb                    ; divide by 256 and round for mb
+            adi   128
+            ghi   rb
+            adci  0
+            plo   rd                    ; save 9-bit mb free in rb
+
+            ldi   0
+            shlc
+            phi   rd
+
+            ldi   string.1              ; pointer to mb size template
+            phi   rf
+            ldi   string.0
+            plo   rf
+
+            sep   scall                 ; convert to decimal string
             dw    f_uintout
 
             ldi   0                     ; zero terminate string
             str   rf
 
-            ldi   sizemid.1             ; get pointer to megabytes phrase
+            ldi   string.1              ; pointer to beginning of mb free
             phi   rf
-            ldi   sizemid.0
+            ldi   string.0
             plo   rf
 
-            sep   scall                 ; output megabytes phrase
+            sep   scall                 ; output mb free space string
             dw    o_msg
 
-            ldi   sizeend.1             ; pointer to unit and newline
-            phi   rf
-            ldi   sizeend.0
-            plo   rf
+            sep   scall
+            dw    o_inmsg
+            db    'MB',13,10,0
 
-            sep   scall                 ; output trailing phrase
-            dw    o_msg
+            sep   sret
 
 
           ; Count the number of used allocation units on the disk. This
           ; could be done with READLUMP but it would be very slow, so we
           ; will read the table on disk directly instead.
+
+getfree:    ghi   ra                    ; start with free count set to size
+            phi   rd
+            glo   ra
+            plo   rd
 
             ldi   17                    ; starting lat sector address
             plo   r7
@@ -313,11 +381,6 @@ nolabel:    sep   scall
 
             phi   r7                    ; clear high bytes of sector address
             plo   r8
-
-            ghi   ra                    ; start with free count set to size
-            phi   rd
-            ghi   ra
-            plo   rd
 
             ldi   sector.0              ; only need to set the low part once
             plo   rf
@@ -391,66 +454,12 @@ partone:    glo   rb
 
           ; Display the free space in allocation units and megabytes.
 
-doneone:    glo   rd                    ; divide by 256 and round for mb
-            adi   128
-            ghi   rd
-            adci  0
+doneone:    sep   scall
+            dw    o_inmsg
+            db    'Free: ',0
 
-            plo   rb                    ; save 9-bit mb free in rb
-            ldi   0
-            adci  0
-            phi   rb
-
-            ldi   freeaus.1             ; pointer to au space field
-            phi   rf
-            ldi   freeaus.0
-            plo   rf
-
-            sep   scall                 ; convert au count to decimal
-            dw    f_uintout
-
-            ldi   0                     ; zero terminate
-            str   rf
-
-            ghi   rb                    ; get free space in mb
-            phi   rd
-            glo   rb
-            plo   rd
-
-            ldi   freemsg.1             ; get pointer to au space message
-            phi   rf
-            ldi   freemsg.0
-            plo   rf
-
-            sep   scall                 ; display au stace message
-            dw    o_msg
-
-            ldi   freembs.1             ; pointer to mb size template
-            phi   rf
-            ldi   freembs.0
-            plo   rf
-
-            sep   scall                 ; convert to decimal string
-            dw    f_uintout
-
-            ldi   0                     ; zero terminate string
-            str   rf
-
-            ldi   freemid.1             ; pointer to beginning of mb free
-            phi   rf
-            ldi   freemid.0
-            plo   rf
-
-            sep   scall                 ; output mb free space string
-            dw    o_msg
-
-            ldi   freeend.1             ; pointer to trailer string
-            phi   rf
-            ldi   freeend.0
-            plo   rf
-
-            sep   scall                 ; output trailer units and newline
-            dw    o_msg
+            sep   scall
+            dw    sizeout
 
             ldi   0                     ; return with success status
             sep   sret
@@ -459,24 +468,6 @@ doneone:    glo   rd                    ; divide by 256 and round for mb
           ; String with root path used when no command-line argument given.
 
 rootdir:    db    '/',0
-
-
-          ; Message templates for formatting and output of disk information.
-
-diskmsg:    db    'Disk: '              ; disk drive number template
-disknum:    db    '##',0
-
-sizemsg:    db    'Size: '              ; disk total size template
-sizeaus:    db    '#####',0
-sizemid:    db    ' AU, '
-sizembs:    db    '###',0
-sizeend:    db    ' MB',13,10,0
-
-freemsg:    db    'Free: '              ; disk free space template
-freeaus:    db    '#####',0
-freemid:    db    ' AU, '
-freembs:    db    '###',0
-freeend:    db    ' MB',13,10,0
 
 
           ; File descriptor and buffer for DTA and sector operations.
@@ -489,5 +480,7 @@ fildes:     ds    4                     ; file offset
             ds    20                    ; file name
 
 sector:     ds    512                   ; sector buffer
+
+string:     ds    10
 
 end:        end   start
