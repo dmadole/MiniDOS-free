@@ -34,8 +34,8 @@ d_ideread:  equ   0447h
 
 start:      br    initial
 
-            db    5+80h                 ; month
-            db    1                     ; date
+            db    1+80h                 ; month
+            db    5                     ; date
             dw    2026                  ; year
             dw    2                     ; build
 
